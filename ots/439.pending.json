@@ -1,0 +1,15 @@
+{
+  "tree_size": "439",
+  "digest_hex": "cd427c8eacab15afc838bb8c451887708952368fd848df4f64fcb4937b568451",
+  "calendars": [
+    {
+      "url": "https://a.pool.opentimestamps.org",
+      "response_b64": "8AheXhZT4JTZhAjwIGrj9sih1nBVuFVQekvTlOJROgZP9QHR3ltfTApQtqhRCPEgJDLBTXEaPXmTNvJtDYFPfHqwvf0me5XpFdkBX7VVqeMI8BCodTThvVRsqmAMuF9BfMF3CPEgNQjSmhXKjOlZ8hftu/Xtrz7ta/GQsNL5MhrHouFsaIcI8SCek1pXQ6yBYL4zWiRmSLq3u34aEwP6ajb6m9gFYHJsAQjwIASuR1WwhCdKc4W0Nj1p68Z4b4FjuJeUnvBVvAdufoF4CPEEajDAZ/AITcMDDMyIhcwAg9/jDS75DI4uLWh0dHBzOi8vYWxpY2UuYnRjLmNhbGVuZGFyLm9wZW50aW1lc3RhbXBzLm9yZw=="
+    },
+    {
+      "url": "https://b.pool.opentimestamps.org",
+      "response_b64": "8AiSprp0+zyw3QjwEESuJiLj+egIqGCEPrhbUYQI8CBT1g0kKECwBgR7YNVcTko3BVRCY6nOtQncXk3w5d4bmgjxIHmbgEOf0WzI5yS54va2M7zZXS0g1/9VEC4iDEluQ6fOCPEEajDAaPAI8Z3SgqCbNtAAg9/jDS75DI4sK2h0dHBzOi8vYm9iLmJ0Yy5jYWxlbmRhci5vcGVudGltZXN0YW1wcy5vcmc="
+    }
+  ],
+  "submitted_at": 1781579880499
+}
