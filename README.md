@@ -3,7 +3,7 @@
 Public, append-only transparency log for Web Reactions counters.
 
 - `checkpoints/latest.json` — the most recent Ed25519-signed tree head (STH).
-- `checkpoints/<tree_size>.json` — every published checkpoint, immutable.
+- `checkpoints/<YYYY-MM-DD>.ndjson` — daily shard, one signed checkpoint per line.
 - `entries/*.ndjson` — raw vote-log leaves for independent re-folding.
 - `ots/<tree_size>.pending.json` — OpenTimestamps receipts (when enabled).
 
