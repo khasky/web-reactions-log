@@ -1,16 +1,37 @@
-# web-reactions-log
+# Web Reactions Log
 
-Public, append-only transparency log for Web Reactions counters.
+Public, append-only transparency log for Web Reactions counters. It holds the
+signed checkpoints and their Bitcoin timestamps — anyone can use it, together with
+the public API and the open-source verifier, to recompute the counts and confirm
+the signed history was never rewritten.
+
+## What's here
 
 - `checkpoints/latest.json` — the most recent Ed25519-signed tree head (STH).
 - `checkpoints/<YYYY-MM-DD>.ndjson` — daily shard, one signed checkpoint per line.
-- `entries/*.ndjson` — raw vote-log leaves for independent re-folding.
-- `ots/<tree_size>.pending.json` — OpenTimestamps receipts (when enabled).
+- `ots/<tree_size>.ots` — matured OpenTimestamps proof anchoring that checkpoint's root in a Bitcoin block.
+- `ots/<tree_size>.json` — that proof's signed checkpoint + the Bitcoin block height.
+- `ots/latest.json` — pointer to the newest matured proof.
+- `ots/<tree_size>.pending.json` — interim OpenTimestamps receipt, before a proof matures.
 
-Anyone can verify the counters without trusting the operator:
+The raw log entries themselves are served by the public API (`/log/entries`); the
+verifier refetches them and checks the recomputed Merkle root against the signed,
+Bitcoin-anchored checkpoint published here.
 
-    node webreactions/verifier/src/verify.js --repo <raw base url> [--api https://api.webreactions.app]
+## Verify
 
-The byte formats, hashing, and the pinned public key are specified in
-`webreactions/TRANSPARENCY.md`. Force-pushing or rewriting history here is the
-tamper signal — mirrors and Software Heritage preserve the real history.
+Use the open-source verifier (separate public repo):
+
+```
+git clone https://github.com/khasky/web-reactions-verifier
+cd web-reactions-verifier
+pnpm install
+node src/verify.mjs \
+  --api https://api.webreactions.app \
+  --repo https://raw.githubusercontent.com/khasky/web-reactions-log/main \
+  --pubkey <published Ed25519 key> \
+  --ots
+```
+
+Force-pushing or rewriting history in this repo is itself the tamper signal —
+third-party mirrors (e.g. Software Heritage) preserve the real history.
