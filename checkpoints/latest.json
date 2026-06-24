@@ -1,7 +1,7 @@
 {
-  "tree_size": "836",
-  "root_hash": "cc5cda13e3d430ef8e69ea42b7c09bf7426d1affbb98c4890d01ae0d645ea427",
-  "ts": 1782280855252,
-  "signature": "b458f53c328c4d3bafc60dabf388872a681674d5070b0b554ea0803db39452aff52c2dc73d7b5c423f93971ea54d74abdba5f5c34a70ce7c829d5eb8fa3cbd00",
+  "tree_size": "854",
+  "root_hash": "0d1140742767f6f1ec175baf75da6d2760643c5da8e8493f295fde86d99ae17a",
+  "ts": 1782284461218,
+  "signature": "377e9560b32b7c9b1c17536961508f1f88ff65bbf8e0ec4de0e7ed0efa1daa282da248bcbf3e7fcc15a5b8ac2abe940f4ad643586a47f960d2198c2edf07bd04",
   "key_id": "ed25519-2026-1"
 }
