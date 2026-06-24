@@ -9,7 +9,7 @@
 
 ## The one rule
 
-**Never hand-edit, rebase, force-push, or rewrite history here.** Rewriting this repo's history is itself the tamper signal the whole system depends on — third-party mirrors (e.g. Software Heritage) preserve the real history, so a rewrite is detectable and self-defeating. Only the worker writes to this repo; an agent should not.
+**Never hand-edit, rebase, force-push, or rewrite history here.** Rewriting this repo's history is itself the tamper signal the whole system depends on — third-party mirrors (e.g. Software Heritage) preserve the real history, so a rewrite is detectable and self-defeating. Only the automated backend writes to this repo; an agent should not.
 
 - Don't add tooling, build scripts, or verification logic here — the open-source **verifier** lives in its own repo (`web-reactions-verifier`). Point people there.
 - Public repo: no secrets, no private internals.
