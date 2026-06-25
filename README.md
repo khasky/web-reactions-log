@@ -18,6 +18,11 @@ The raw log entries themselves are served by the public API (`/log/entries`); th
 verifier refetches them and checks the recomputed Merkle root against the signed,
 Bitcoin-anchored checkpoint published here.
 
+Revocations are part of that same raw log. Account erasure or other public
+corrections are represented as append-only `op=4` leaves, exposed separately at
+`/log/revocations` for audit convenience. The verifier checks that endpoint
+against the actual `op=4` leaves covered by the signed root anchored here.
+
 ## Verify
 
 Use the open-source verifier (separate public repo):
