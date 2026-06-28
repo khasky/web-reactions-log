@@ -15,13 +15,10 @@
 //
 // Flags:
 //   --yes, -y         apply the deletion (otherwise dry-run)
-//   --api <url>       API base for the DB-lockstep check (default prod)
+//   --api <url>       API base for the DB-lockstep check
 //   --no-api-check    skip the DB-lockstep check
 //   --force           proceed despite a failed precondition (no .git, or the API
 //                     still reporting a non-genesis checkpoint)
-//
-// This script does NOT commit. The reset only goes live once you review and
-// `git add -A && git commit && git push` yourself.
 // =============================================================================
 
 import { readdirSync, rmSync, existsSync } from "node:fs";
@@ -108,7 +105,7 @@ async function main() {
     } else if (ts > 0) {
       const msg = `the API at ${apiBase} still reports a checkpoint (tree_size=${ts}) — the DB is NOT at genesis. Clearing the log now will desync it.`;
       if (apply && !force) {
-        err(`${msg}\n  Reset the DB first (workers: scripts/test-database-clear.sql), or pass --force.`);
+        err(`${msg}\n  Reset the backing database first, or pass --force.`);
         return 1;
       }
       warn(msg);
@@ -134,9 +131,9 @@ async function main() {
   console.log("    git status                                   # review the deletions");
   console.log('    git add -A && git commit -m "reset transparency log"');
   console.log("    git push");
-  console.log("\n⚠ Keep the DB in lockstep: vote_log / log_checkpoints empty and");
-  console.log("  log_state.last_seq = 0 (workers: scripts/test-database-clear.sql), else the");
-  console.log("  next checkpoint cron republishes from a non-genesis state.");
+  console.log("\n⚠ Keep the backing database in lockstep (reset to genesis), or the next");
+  console.log("  published checkpoint starts from a non-genesis state and verification will");
+  console.log("  mismatch.");
   return 0;
 }
 
