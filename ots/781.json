@@ -1,9 +1,0 @@
-{
-  "tree_size": "781",
-  "root_hash": "7feba1dc817a6ef90ff1268bf3a8f3fc109bf3f09b1d4c0c33638b91072a8ef1",
-  "ts": 1782147610677,
-  "signature": "b6ceaeb15fc65bf1cb2a65bd1d57ab53f4b2d76e2f90510489e0752a11f4a9751e5ed3dd13d5db44180ae9481d86f839ac000f654fca6fd1ffe79618e3b6dc0e",
-  "key_id": "ed25519-2026-1",
-  "ots_path": "ots/781.ots",
-  "btc_block_height": 955111
-}

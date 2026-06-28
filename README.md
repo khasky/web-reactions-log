@@ -38,5 +38,19 @@ node src/verify.mjs \
   --ots
 ```
 
+## Administrators
+
+`clear-log.mjs` (operator-only) resets this log to empty — every checkpoint and OTS
+proof removed, the `.gitkeep` markers kept — e.g. a pre-launch reset after the
+backing database was cleared. It is dry-run by default, verifies the API is at
+genesis first (so the log stays in lockstep with the DB), and does **not** commit:
+
+```
+node clear-log.mjs            # dry run — show what would be removed
+node clear-log.mjs --yes      # remove, then review + git commit + push yourself
+```
+
+Operator tooling, not part of the published log.
+
 Force-pushing or rewriting history in this repo is itself the tamper signal —
 third-party mirrors (e.g. Software Heritage) preserve the real history.
