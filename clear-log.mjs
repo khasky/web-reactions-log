@@ -8,12 +8,19 @@
 // EXCEPT the `.gitkeep` markers. README, LICENSE, .git, and this script are never
 // touched.
 //
+// It can also create that empty layout from scratch (`--init`), so standing up a
+// fresh copy of this repo (e.g. a new staging mirror) needs no separate scaffolding
+// script — this one operator script both initializes and resets the layout.
+//
 // Dependency-free: Node 18+ built-ins only (no package.json / install needed).
 //   node clear-log.mjs            # DRY RUN — show what would be removed
 //   node clear-log.mjs --yes      # actually remove
+//   node clear-log.mjs --init     # create the empty checkpoints/ ots/ entries/ layout
 //   node clear-log.mjs --help
 //
 // Flags:
+//   --init            create the canonical empty layout (dirs + .gitkeep) and exit;
+//                     only ever creates missing pieces, never deletes
 //   --yes, -y         apply the deletion (otherwise dry-run)
 //   --api <url>       API base for the DB-lockstep check
 //   --no-api-check    skip the DB-lockstep check
@@ -21,7 +28,7 @@
 //                     still reporting a non-genesis checkpoint)
 // =============================================================================
 
-import { readdirSync, rmSync, existsSync } from "node:fs";
+import { readdirSync, rmSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -45,9 +52,34 @@ const err = (m) => console.error(`✗ ${m}`);
 async function main() {
   if (has("--help", "-h")) {
     console.log(
-      "Usage: node clear-log.mjs [--yes] [--api <url>] [--no-api-check] [--force]\n" +
-        "Resets checkpoints/ ots/ entries/ to .gitkeep-only. Dry-run unless --yes.",
+      "Usage: node clear-log.mjs [--init] [--yes] [--api <url>] [--no-api-check] [--force]\n" +
+        "--init creates the empty checkpoints/ ots/ entries/ layout.\n" +
+        "Otherwise resets those dirs to .gitkeep-only (dry-run unless --yes).",
     );
+    return 0;
+  }
+
+  // --- Init mode: create the canonical empty layout, then exit ---------------
+  // Lets this one operator script also scaffold a fresh log repo (the data dirs +
+  // their .gitkeep markers) — e.g. a new staging mirror — so no separate bootstrap
+  // script is needed. Idempotent: only ever CREATES missing pieces, never deletes.
+  if (has("--init")) {
+    let created = 0;
+    for (const d of DATA_DIRS) {
+      mkdirSync(join(ROOT, d), { recursive: true });
+      const keep = join(ROOT, d, ".gitkeep");
+      if (!existsSync(keep)) {
+        writeFileSync(keep, "");
+        created++;
+      }
+    }
+    console.log(`Web Reactions log layout (root: ${ROOT})`);
+    for (const d of DATA_DIRS) console.log(`  ${d}/.gitkeep`);
+    console.log(created ? `\n✓ created ${created} missing marker(s).` : "\n✓ layout already present.");
+    console.log("\nNEXT — commit it (only if this is a fresh repo):");
+    console.log("    git init -b main      # skip if already a git repo");
+    console.log('    git add -A && git commit -m "init transparency log layout"');
+    console.log("    git push");
     return 0;
   }
 

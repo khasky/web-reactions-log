@@ -48,7 +48,11 @@ genesis first (so the log stays in lockstep with the DB), and does **not** commi
 ```
 node clear-log.mjs            # dry run — show what would be removed
 node clear-log.mjs --yes      # remove, then review + git commit + push yourself
+node clear-log.mjs --init     # (re)create the empty checkpoints/ ots/ entries/ layout
 ```
+
+`--init` scaffolds the canonical empty layout — the data directories and their
+`.gitkeep` markers — for standing up a fresh copy of this repo (e.g. a new mirror).
 
 Operator tooling, not part of the published log.
 
