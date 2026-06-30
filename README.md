@@ -58,3 +58,8 @@ Operator tooling, not part of the published log.
 
 Force-pushing or rewriting history in this repo is itself the tamper signal —
 third-party mirrors (e.g. Software Heritage) preserve the real history.
+
+## License
+
+The log data in this repository is dedicated to the public domain under
+[CC0 1.0 Universal](LICENSE) — copy, mirror, and verify it freely.
