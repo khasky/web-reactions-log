@@ -5,6 +5,11 @@ holds signed checkpoints and Bitcoin timestamps for the public reaction log. Use
 with the public API and the open-source verifier, it lets anyone recompute the
 counters and confirm the signed history was not silently rewritten.
 
+This log is paired with the open-source
+[`web-reactions-verifier`](https://github.com/khasky/web-reactions-verifier). This
+repository holds the signed checkpoints and OpenTimestamps proofs; that repository
+holds the code that checks them.
+
 If you only want to check the current public log, start with **Verify** below.
 
 ## How verification works
