@@ -56,7 +56,7 @@ Every commit here is made by the anchoring bot. The message says what it did:
 | `add checkpoint 766` | `checkpoints/<YYYY-MM-DD>.ndjson` | a new Ed25519-signed tree head (STH) for `tree_size` 766 was appended — the substantive "a checkpoint was published" event |
 | `update latest 766` | `checkpoints/latest.json` | the pointer to the newest checkpoint moved to 766 (the file the verifier reads) |
 | `ots submit 759` | `ots/759.pending.json` | checkpoint 759's root was submitted to the OpenTimestamps calendars; awaiting a Bitcoin block |
-| `ots anchor 759 @ btc#H` | `ots/759.ots` | the proof matured — 759's root is now anchored in Bitcoin block `H` |
+| `ots anchor 759` | `ots/759.ots` | the proof matured — 759's root is now anchored in Bitcoin (the block height is recorded in the `ots/759.json` sidecar) |
 | `ots sidecar 759` | `ots/759.json` | the self-contained sidecar for that proof (signed STH + block height) |
 | `ots latest 759` | `ots/latest.json` | the pointer to the newest matured proof moved to 759 |
 
