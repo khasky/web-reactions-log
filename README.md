@@ -31,21 +31,51 @@ served counter that does not match the fold of the signed log is detectable.
 
 ## What's here
 
-- `checkpoints/latest.json` — the most recent Ed25519-signed tree head (STH).
-- `checkpoints/<YYYY-MM-DD>.ndjson` — daily shard, one signed checkpoint per line.
-- `ots/<tree_size>.ots` — matured OpenTimestamps proof anchoring that checkpoint's root in a Bitcoin block.
-- `ots/<tree_size>.json` — that proof's signed checkpoint + the Bitcoin block height.
-- `ots/latest.json` — pointer to the newest matured proof.
-- `ots/<tree_size>.pending.json` — interim OpenTimestamps receipt, before a proof matures.
+Everything under `checkpoints/`, `ots/`, and `entries/` is written by the anchoring
+bot. What each file is for:
 
-The raw log entries themselves are served by the public API (`/log/entries`); the
-verifier refetches them and checks the recomputed Merkle root against the signed,
-Bitcoin-anchored checkpoint published here.
+**`checkpoints/` — signed tree heads (STHs)**
 
-Revocations are part of that same raw log. Account erasure or other public
-corrections are represented as append-only `op=4` leaves, exposed separately at
-`/log/revocations` for audit convenience. The verifier checks that endpoint
-against the actual `op=4` leaves covered by the signed root anchored here.
+- `latest.json` — the single newest checkpoint (`tree_size`, `root_hash`, `ts`,
+  `signature`), pretty-printed. **Overwritten every checkpoint.** The O(1) entry
+  point consumers and the verifier read first; also the git-published view that is
+  compared against the live API to catch a split view.
+- `<YYYY-MM-DD>.ndjson` — the permanent **append-only archive**: one compact JSON
+  line per checkpoint, one shard per UTC day — the browsable history of every STH
+  ever signed. Today's shard is appended to and freezes once the day rolls over.
+- `.gitkeep` — empty marker so the directory survives a fresh/reset repo.
+
+The newest checkpoint is in both `latest.json` and the current shard on purpose (a
+moving pointer plus an append-only archive), not by accident.
+
+**`ots/` — Bitcoin timestamps (OpenTimestamps)**
+
+A checkpoint's root is submitted to the OTS calendars, then matured into a proof
+once it lands in a Bitcoin block, so an anchored checkpoint `<tree_size>` produces:
+
+- `<tree_size>.pending.json` — interim calendar receipt right after submission
+  (queued, not yet in a Bitcoin block); superseded once the proof matures.
+- `<tree_size>.ots` — the matured OpenTimestamps proof (standard binary `.ots`)
+  anchoring that checkpoint's root in a Bitcoin block.
+- `<tree_size>.json` — self-contained sidecar for that proof: the signed STH + the
+  Bitcoin block height, so a verifier needs nothing else to tie the `.ots` to a
+  checkpoint. (The block height lives here, not in the binary `.ots`.)
+- `latest.json` — pointer to the newest matured proof; overwritten as proofs mature.
+- `.gitkeep` — empty marker so the directory survives a fresh/reset repo.
+
+Not every checkpoint gets its own OTS proof — only the newest not-yet-submitted one
+each time submit runs; the rest ride a consistency proof to an anchored one.
+
+**`entries/` — reserved (empty)**
+
+Holds only `.gitkeep`. The raw log leaves (individual reaction events) are **not**
+published here — they are served by the public API at `/log/entries`, which the
+verifier refetches to recompute the Merkle root against the signed checkpoint here.
+
+Revocations are part of that same raw API log: account erasure and other public
+corrections are append-only `op=4` leaves, exposed at `/log/revocations`. The
+verifier checks that endpoint against the actual `op=4` leaves covered by the signed
+root anchored here.
 
 ## Reading the commit history
 
