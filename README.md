@@ -1,38 +1,40 @@
 # Web Reactions Log
 
 Public, append-only transparency log for Web Reactions counters. This repository
-holds signed checkpoints and Bitcoin timestamps for the public reaction log. Used
-with the public API and the open-source verifier, it lets anyone recompute the
-counters and confirm the signed history was not silently rewritten.
+holds the signed checkpoints, Bitcoin timestamps, Sigstore Rekor anchors, signed
+daily statistics, and the raw log entries themselves. Used with the open-source
+verifier, it lets anyone recompute the counters and confirm the signed history
+was not silently rewritten — a plain `git clone` of this repository is a
+complete, offline-verifiable copy of the log.
 
 This log is paired with the open-source
 [`web-reactions-verifier`](https://github.com/khasky/web-reactions-verifier). This
-repository holds the signed checkpoints and OpenTimestamps proofs; that repository
-holds the code that checks them.
+repository holds the published data; that repository holds the code that checks it.
 
 If you only want to check the current public log, start with **Verify** below.
 
 ## How verification works
 
-Web Reactions publishes raw log entries from the public API (`/log/entries`) and
-publishes signed tree heads in this repository:
+Web Reactions serves raw log entries from the public API (`/log/entries`),
+mirrors them into this repository, and publishes signed tree heads here:
 
 1. Each accepted counter-changing event is serialized as a log leaf.
 2. The API periodically builds a Merkle tree over the leaves and signs the root
    as a checkpoint with Ed25519.
-3. This repository records those checkpoints in Git history; mature checkpoints
-   can also be anchored to Bitcoin through OpenTimestamps.
-4. The verifier refetches the public leaves, recomputes every leaf hash and the
-   Merkle root, checks the signed checkpoint, then folds the log back into
-   counters.
+3. This repository records those checkpoints in Git history and mirrors the
+   checkpoint-covered raw entries as `entries/` shards; mature checkpoints are
+   also anchored to Bitcoin through OpenTimestamps and to Sigstore Rekor.
+4. The verifier refetches the leaves (from the API or from the shards here),
+   recomputes every leaf hash and the Merkle root, checks the signed checkpoint
+   and the whole checkpoint archive, then folds the log back into counters.
 
 That means live counters are verifiable against the public log. A cached or
 served counter that does not match the fold of the signed log is detectable.
 
 ## What's here
 
-Everything under `checkpoints/`, `ots/`, and `entries/` is written by the anchoring
-bot. What each file is for:
+Everything under `checkpoints/`, `ots/`, `entries/`, `rekor/`, and `stats/` is
+written by the anchoring bot. What each file is for:
 
 **`checkpoints/` — signed tree heads (STHs)**
 
@@ -66,16 +68,43 @@ once it lands in a Bitcoin block, so an anchored checkpoint `<tree_size>` produc
 Not every checkpoint gets its own OTS proof — only the newest not-yet-submitted one
 each time submit runs; the rest ride a consistency proof to an anchored one.
 
-**`entries/` — reserved (empty)**
+**`entries/` — the raw log leaves, mirrored**
 
-Holds only `.gitkeep`. The raw log leaves (individual reaction events) are **not**
-published here — they are served by the public API at `/log/entries`, which the
-verifier refetches to recompute the Merkle root against the signed checkpoint here.
+- `<start>-<end>.ndjson` — raw log entries in fixed 10 000-leaf ranges
+  (zero-padded, e.g. `000000000001-000000010000.ndjson`), published once a
+  checkpoint covers them. One JSON line per leaf, the same shape the public API
+  serves at `/log/entries`. A closed range is immutable; only the newest one
+  grows.
+- `.gitkeep` — empty marker so the directory survives a fresh/reset repo.
 
-Revocations are part of that same raw API log: account erasure and other public
-corrections are append-only `op=4` leaves, exposed at `/log/revocations`. The
-verifier checks that endpoint against the actual `op=4` leaves covered by the signed
-root anchored here.
+Because the leaves are mirrored here, a clone of this repository is a complete,
+independently archivable copy of the log, and the verifier can audit it **fully
+offline** (see Verify below) — the API being unavailable, or serving something
+different, changes nothing about what this record proves.
+
+Revocations are part of the same log: account erasure and other public
+corrections are append-only `op=4` leaves, exposed at `/log/revocations` and
+present in the shards. The verifier checks that endpoint against the actual
+`op=4` leaves covered by the signed root anchored here.
+
+**`rekor/` — Sigstore Rekor anchors**
+
+- `<tree_size>.json` — sidecar for a checkpoint anchored to
+  [Sigstore Rekor](https://docs.sigstore.dev/logging/overview/), an independently
+  operated public transparency log: `{tree_size, root_hash, rekor_uuid,
+  rekor_log_index, rekor_url}`. The submitted entry carries the same signed tree
+  head bytes, so Rekor independently witnesses each checkpoint's existence; the
+  verifier's `--rekor` check resolves the UUID and compares the bytes.
+
+**`stats/` — signed daily aggregates**
+
+- `<YYYY-MM-DD>.json` — one signed commitment per UTC day: `votes`,
+  `unique_user_refs`, and `revokes` (all three recomputable from the entries by
+  anyone — the verifier does exactly that), `new_accounts` (an operator
+  commitment not derivable from the log), and, on the day a pseudonym epoch
+  closes, an `epoch_continuity` count. The Ed25519 signature covers a canonical
+  text rendering and uses the same log key as the checkpoints. The day series is
+  gap-free from its first file; the verifier flags holes and stale series.
 
 ## Reading the commit history
 
@@ -89,6 +118,9 @@ Every commit here is made by the anchoring bot. The message says what it did:
 | `ots anchor 759` | `ots/759.ots` | the proof matured — 759's root is now anchored in Bitcoin (the block height is recorded in the `ots/759.json` sidecar) |
 | `ots sidecar 759` | `ots/759.json` | the self-contained sidecar for that proof (signed STH + block height) |
 | `ots latest 759` | `ots/latest.json` | the pointer to the newest matured proof moved to 759 |
+| `add entries 741-766` | `entries/<start>-<end>.ndjson` | leaves 741–766 (now covered by a checkpoint) were appended to the raw-entry shard |
+| `rekor anchor 766` | `rekor/766.json` | checkpoint 766's signed tree head was submitted to Sigstore Rekor; the sidecar records the entry UUID |
+| `stats 2026-07-18` | `stats/2026-07-18.json` | the signed daily aggregates for that UTC day were published |
 
 `tree_size` is the cumulative number of log leaves — it only ever grows.
 
@@ -99,16 +131,17 @@ their wording.
 
 **Why the numbers look out of order.** Checkpoint `tree_size` values jump by
 however many events landed in that hour (e.g. `742 → 754 → 759 → 766`), not by
-one. And an OTS submit always anchors the *newest* checkpoint not yet submitted,
-so several submits walk newest → older (`766`, then `759`, …). Both are expected;
-most intermediate checkpoints never get their own OTS proof and are tied to an
-anchored one by consistency proofs instead.
+one. And an OTS submit always anchors the *newest* checkpoint not yet submitted
+(submits run right after each checkpoint), so several submits can walk newest →
+older (`766`, then `759`, …). Both are expected; most intermediate checkpoints
+never get their own OTS proof and are tied to an anchored one by consistency
+proofs instead.
 
 **Editing this repository.** Docs (`README`, `LICENSE`, anything outside the data
 directories) are safe to edit — the verifier ignores them and the bot never
-touches them. The data directories — `checkpoints/`, `ots/`, and any published
-`entries/` — are machine-generated: hand-editing them, force-pushing, or
-rewriting history is exactly the tampering the verifier is built to catch (and
+touches them. The data directories — `checkpoints/`, `ots/`, `entries/`,
+`rekor/`, and `stats/` — are machine-generated: hand-editing them, force-pushing,
+or rewriting history is exactly the tampering the verifier is built to catch (and
 third-party mirrors preserve the real history). Don't edit them by hand.
 
 ## Verify
@@ -132,6 +165,18 @@ npx web-reactions-verify \
   --api https://api.webreactions.app \
   --repo https://raw.githubusercontent.com/khasky/web-reactions-log/main \
   --target github/1
+```
+
+### Fully offline audit
+
+The raw leaves are mirrored in this repository, so the whole audit can run
+against a clone or mirror without contacting the API at all — the checkpoint
+under test comes from `checkpoints/latest.json` and every entry from the
+`entries/` shards:
+
+```bash
+npx web-reactions-verify --entries repo \
+  --repo https://raw.githubusercontent.com/khasky/web-reactions-log/main
 ```
 
 ### Bitcoin anchor check
@@ -160,30 +205,38 @@ node src/verify.mjs \
   --repo https://raw.githubusercontent.com/khasky/web-reactions-log/main
 ```
 
-The current pinned public key is:
-
-```text
-MZZMvWNdL8MXb0AzSvN3+XYnXeU126NWqfqyoZ1dLkU=
-```
-
-Pass `--pubkey <base64>` only when verifying a different deployment or a fork
-with a different signing key.
+The published public key lives in one authoritative place — pinned in the
+[verifier source](https://github.com/khasky/web-reactions-verifier/blob/main/src/verify.mjs)
+(and printed in that repository's README) — deliberately not restated here, so a
+copy can't silently drift from the one the tool actually checks against. Pass
+`--pubkey <base64>` only when verifying a different deployment or a fork with a
+different signing key.
 
 With `--target github/1`, expected successful output looks like this. Without
 `--target`, the live `/reactions/count` comparison line is omitted.
 
 ```bash
-checkpoint: tree_size=12 ts=1782799216388
+checkpoint: tree_size=1128 ts=1784586730193
 PASS  checkpoint Ed25519 signature
-PASS  GitHub anchor matches signed root (tree_size=12)
-PASS  fetched all 12 leaves (got 12)
+PASS  checkpoint is fresh (2.1h old, threshold 168h — a quiet log ages legitimately; tune --max-checkpoint-age-hours)
+PASS  GitHub anchor matches signed root (tree_size=1128)
+PASS  fetched all 1128 leaves (got 1128, source: api)
 PASS  every recomputed leaf_hash matches the served leaf (0 mismatch)
 PASS  recomputed Merkle root == checkpoint root_hash
-folded 11 (site,target,reaction) counters from 12 events
+PASS  checkpoint archive parses (45 STH line(s) in 13 shard(s))
+PASS  no two archived STHs disagree on one tree_size (0 conflict(s))
+PASS  every archived STH signature verifies (45 checked, 0 bad)
+PASS  archived STH timestamps are monotone in tree_size (0 regression(s))
+PASS  archive never exceeds the live tree (max archived 1128 <= 1128)
+PASS  the live checkpoint is present in the archive shards
+PASS  every archived root replays from today's leaves (45 checkpoint(s), 0 mismatch)
+PASS  signed daily stats match the log (11 day(s), 0 violation(s))
+folded 793 (site,target,reaction) counters from 1128 events
 PASS  live /reactions/count matches the fold for github/1
-revocations: 0 tombstone(s)
-PASS  /log/revocations matches op=4 leaves in the log (0)
+revocations: 308 tombstone(s)
+PASS  /log/revocations matches op=4 leaves in the log (308)
 PASS  structural invariants hold (0 violation(s))
+PASS  account wipes are complete (0 violation(s); grace 48h)
 
 RESULT: PASS
 ```
@@ -213,10 +266,14 @@ and the verifier applies the inverse effect when recomputing counters.
 The verifier checks integrity of the public counter history:
 
 - the checkpoint signature matches the published Ed25519 key;
-- the public API entries recompute to the signed Merkle root;
+- the entries (from the API or the shards here) recompute to the signed Merkle root;
 - the root matches the checkpoint published in this repository;
+- every checkpoint ever archived here replays from today's leaves — the whole
+  published history lies on one append-only line;
+- the signed daily stats match what the log itself contains for each day;
 - the revocation endpoint matches the actual `op=4` leaves in the log;
 - optional target counts match the fold of the signed log;
+- with `--rekor`, the checkpoint's Sigstore Rekor entry holds exactly its signed bytes;
 - with `--ots`, a matured checkpoint root is anchored in Bitcoin.
 
 This does **not** prove that every reaction came from a unique human, or that the
