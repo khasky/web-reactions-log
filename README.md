@@ -102,7 +102,8 @@ present in the shards. The verifier checks that endpoint against the actual
   operated public transparency log: `{tree_size, root_hash, rekor_uuid,
   rekor_log_index, rekor_url}`. The submitted entry carries the same signed tree
   head bytes, so Rekor independently witnesses each checkpoint's existence; the
-  verifier's `--rekor` check resolves the UUID and compares the bytes.
+  verifier cross-checks this by default (`--no-rekor` to skip), resolving the
+  UUID and comparing the bytes.
 
 **`swh/` — Software Heritage archival records**
 
