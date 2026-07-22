@@ -1,8 +1,9 @@
 # Web Reactions Log
 
 Public, append-only transparency log for Web Reactions counters. This repository
-holds the signed checkpoints, Bitcoin timestamps, Sigstore Rekor anchors, signed
-daily statistics, and the raw log entries themselves. Used with the open-source
+holds the signed checkpoints, Bitcoin timestamps, Sigstore Rekor anchors,
+Software Heritage archival records, signed daily statistics, and the raw log
+entries themselves. Used with the open-source
 verifier, it lets anyone recompute the counters and confirm the signed history
 was not silently rewritten — a plain `git clone` of this repository is a
 complete, offline-verifiable copy of the log.
@@ -33,8 +34,8 @@ served counter that does not match the fold of the signed log is detectable.
 
 ## What's here
 
-Everything under `checkpoints/`, `ots/`, `entries/`, `rekor/`, and `stats/` is
-written by the anchoring bot. What each file is for:
+Everything under `checkpoints/`, `ots/`, `entries/`, `rekor/`, `swh/`, and
+`stats/` is written by the anchoring bot. What each file is for:
 
 **`checkpoints/` — signed tree heads (STHs)**
 
@@ -103,6 +104,22 @@ present in the shards. The verifier checks that endpoint against the actual
   head bytes, so Rekor independently witnesses each checkpoint's existence; the
   verifier's `--rekor` check resolves the UUID and compares the bytes.
 
+**`swh/` — Software Heritage archival records**
+
+- `latest.json` — the coordinate of the most recent Software Heritage save
+  request for this repo: `{origin, git_commit, swhid, revision_url,
+  save_request_id, save_request_status, save_task_status, snapshot_swhid,
+  requested_ts}`. **Overwritten each daily save;** its git history here is the
+  append-only record of every save.
+
+Because this is a Git origin, the archived commit's SWHID is
+`swh:1:rev:<git_commit>` — SWHIDs are `sha1_git`, so the SWH revision hash *is*
+the git commit hash. That makes third-party preservation checkable rather than
+assumed: resolve `revision_url` (or the SWHID) against the Software Heritage API
+and confirm the archive holds this repo's history. The save runs asynchronously,
+so a just-published coordinate resolves once SWH completes the visit — the same
+"pending, then matures" shape as an OTS proof.
+
 **`stats/` — signed daily aggregates**
 
 - `<YYYY-MM-DD>.json` — one signed commitment per UTC day: `votes`,
@@ -127,6 +144,7 @@ Every commit here is made by the anchoring bot. The message says what it did:
 | `ots latest 759` | `ots/latest.json` | the pointer to the newest matured proof moved to 759 |
 | `add entries 741-766` | `entries/<start>-<end>.ndjson` | leaves 741–766 (now covered by a checkpoint) were appended to the raw-entry shard |
 | `rekor anchor 766` | `rekor/766.json` | checkpoint 766's signed tree head was submitted to Sigstore Rekor; the sidecar records the entry UUID |
+| `swh save a1b2c3d` | `swh/latest.json` | Software Heritage was asked to re-archive the repo; the record pins the archived commit `a1b2c3d` as `swh:1:rev:…` |
 | `stats 2026-07-18` | `stats/2026-07-18.json` | the signed daily aggregates for that UTC day were published |
 
 `tree_size` is the cumulative number of log leaves — it only ever grows.
@@ -147,7 +165,7 @@ proofs instead.
 **Editing this repository.** Docs (`README`, `LICENSE`, anything outside the data
 directories) are safe to edit — the verifier ignores them and the bot never
 touches them. The data directories — `checkpoints/`, `ots/`, `entries/`,
-`rekor/`, and `stats/` — are machine-generated: hand-editing them, force-pushing,
+`rekor/`, `swh/`, and `stats/` — are machine-generated: hand-editing them, force-pushing,
 or rewriting history is exactly the tampering the verifier is built to catch (and
 third-party mirrors preserve the real history). Don't edit them by hand.
 
@@ -280,7 +298,7 @@ The verifier checks integrity of the public counter history:
 - the signed daily stats match what the log itself contains for each day;
 - the revocation endpoint matches the actual `op=4` leaves in the log;
 - optional target counts match the fold of the signed log;
-- with `--rekor`, the checkpoint's Sigstore Rekor entry holds exactly its signed bytes;
+- the checkpoint's Sigstore Rekor entry holds exactly its signed bytes (checked by default; `--no-rekor` to skip);
 - with `--ots`, a matured checkpoint root is anchored in Bitcoin.
 
 This does **not** prove that every reaction came from a unique human, or that the
