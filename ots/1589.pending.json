@@ -1,0 +1,15 @@
+{
+  "tree_size": "1589",
+  "digest_hex": "faebd2297d7a4df3e1b826046d3fcdc6aa98d18e7cf2803805611dfc4f2f1873",
+  "calendars": [
+    {
+      "url": "https://alice.btc.calendar.opentimestamps.org",
+      "response_b64": "8AjL7RHtNuCzRwjwECarhXyCOTADmLdxYms5JoEI8SC71CaIDSV5WVi2mYgurEjQBGTv/WDPr8WAh0h53vG/ZAjxIBFS0nGxzcye9J5YGZYLo7t/uPXWTnG9gPZHpGbiqJddCPEEamHKFfAITwhUWjcpjf8Ag9/jDS75DI4uLWh0dHBzOi8vYWxpY2UuYnRjLmNhbGVuZGFyLm9wZW50aW1lc3RhbXBzLm9yZw=="
+    },
+    {
+      "url": "https://bob.btc.calendar.opentimestamps.org",
+      "response_b64": "8Ah4bIsMEZDMJAjwEP4Ryp+x+fag/+V+fUf2bukI8SCFMArNOdKxRZ0pABLV1gVfvZ8FkhRK1nhxa/0GfoZbUwjwIMRZLoEu69XEV/TAJReXp6ZKb2R1nCqdYu4r262pO20LCPEEamHKFvAI44EdNhRsKagAg9/jDS75DI4sK2h0dHBzOi8vYm9iLmJ0Yy5jYWxlbmRhci5vcGVudGltZXN0YW1wcy5vcmc="
+    }
+  ],
+  "submitted_at": 1784793622604
+}
